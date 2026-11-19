@@ -1,0 +1,269 @@
+openapi: 3.0.3
+info:
+  title: Vehicle Inventory API
+  version: 1.0.0
+  description: >
+    Illustrative API contract for a fictional dealership vehicle inventory service.
+    This is a learning example and is not a verified Tekion API specification.
+
+servers:
+  - url: https://dev-api.example.com
+    description: Example development server; replace only with an API-owner-approved URL.
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/vehicles:
+    get:
+      operationId: listVehicles
+      summary: Retrieve all vehicles
+      description: Returns a list of vehicles in the inventory.
+      responses:
+        '200':
+          description: Vehicle list returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - vehicles
+                properties:
+                  vehicles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vehicle'
+              example:
+                vehicles:
+                  - vehicleId: "10025"
+                    manufacturer: Toyota
+                    model: Camry
+                    modelYear: 2025
+                    color: White
+                    availability: Available
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/vehicles/{vehicleId}:
+    get:
+      operationId: getVehicleById
+      summary: Retrieve vehicle details
+      description: Returns the vehicle identified by the supplied vehicle ID.
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          description: Unique identifier of the vehicle.
+          schema:
+            type: string
+          example: "10025"
+      responses:
+        '200':
+          description: Vehicle returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+              example:
+                vehicleId: "10025"
+                manufacturer: Toyota
+                model: Camry
+                modelYear: 2025
+                color: White
+                availability: Available
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/vehicles/search:
+    get:
+      operationId: searchVehicles
+      summary: Search vehicles
+      description: Searches inventory using optional vehicle attributes.
+      parameters:
+        - name: manufacturer
+          in: query
+          required: false
+          schema:
+            type: string
+          example: Toyota
+        - name: model
+          in: query
+          required: false
+          schema:
+            type: string
+          example: Camry
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1886
+          example: 2025
+        - name: color
+          in: query
+          required: false
+          schema:
+            type: string
+          example: White
+      responses:
+        '200':
+          description: Search results returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - vehicles
+                properties:
+                  vehicles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vehicle'
+              example:
+                vehicles:
+                  - vehicleId: "10025"
+                    manufacturer: Toyota
+                    model: Camry
+                    modelYear: 2025
+                    color: White
+                    availability: Available
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Example Bearer authentication. Confirm the actual token format and acquisition flow with the API owner.
+
+  schemas:
+    Vehicle:
+      type: object
+      required:
+        - vehicleId
+        - manufacturer
+        - model
+        - modelYear
+        - color
+        - availability
+      properties:
+        vehicleId:
+          type: string
+          description: Unique vehicle identifier.
+          example: "10025"
+        manufacturer:
+          type: string
+          description: Vehicle manufacturer.
+          example: Toyota
+        model:
+          type: string
+          description: Vehicle model.
+          example: Camry
+        modelYear:
+          type: integer
+          description: Vehicle model year.
+          example: 2025
+        color:
+          type: string
+          description: Vehicle exterior color.
+          example: White
+        availability:
+          type: string
+          description: Example inventory availability value.
+          enum:
+            - Available
+            - Reserved
+            - Sold
+          example: Available
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: vehicle_not_found
+        message:
+          type: string
+          example: The requested vehicle was not found.
+
+  responses:
+    BadRequest:
+      description: The request is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: bad_request
+            message: The request parameters are invalid.
+    Unauthorized:
+      description: Authentication is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: unauthorized
+            message: A valid access token is required.
+    Forbidden:
+      description: The caller does not have permission to perform the operation.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: forbidden
+            message: The caller is not permitted to access this resource.
+    NotFound:
+      description: The requested vehicle was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: vehicle_not_found
+            message: The requested vehicle was not found.
+    TooManyRequests:
+      description: The request rate limit was exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: rate_limit_exceeded
+            message: Too many requests. Try again later.
+    InternalServerError:
+      description: An unexpected server error occurred.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: internal_server_error
+            message: An unexpected error occurred.
